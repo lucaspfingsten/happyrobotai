@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CallStatus {
+  started
+  ended
+}
+
+model Load {
+  id               String   @id @default(uuid()) @map("load_id")
+  origin           String
+  destination      String
+  pickupDatetime   DateTime @map("pickup_datetime")
+  deliveryDatetime DateTime @map("delivery_datetime")
+  equipmentType    String   @map("equipment_type")
+  loadboardRate    Float?   @map("loadboard_rate")
+  notes            String?
+  weight           Float?
+  numOfPieces      Int?     @map("num_of_pieces")
+  miles            Float?
+  dimensions       String?
+  commodityType    String?  @map("commodity_type")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("loads")
+}
+
+model Call {
+  id              String     @id @default(uuid())
+  callId          String     @unique @map("call_id")
+  status          CallStatus @default(started)
+  outcome         String?
+  durationSeconds Int?       @map("duration_seconds")
+  carrierName     String?    @map("carrier_name")
+  startedAt       DateTime   @map("started_at")
+  endedAt         DateTime?  @map("ended_at")
+  summary         String?    @map("summary")
+  sentiment       String?    @map("sentiment")
+  stagesReached   Json?      @map("stages_reached")
+  metadata        Json?
+  createdAt       DateTime   @default(now()) @map("created_at")
+
+  @@map("calls")
+}
+
+model LoadSearch {
+  id        String   @id @default(uuid())
+  query     Json
+  results   Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("load_searches")
+}

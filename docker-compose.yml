@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: happyrobotai
+      POSTGRES_USER: happyrobot
+      POSTGRES_PASSWORD: happyrobot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://happyrobot:happyrobot@db:5432/happyrobotai
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
