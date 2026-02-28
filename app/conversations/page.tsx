@@ -17,7 +17,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from "lucide-react"
-import { useApiKey } from "@/lib/use-api-key"
 
 interface StagesReached {
   verified_mcnumber: boolean
@@ -158,14 +157,10 @@ export default function ConversationsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const apiKey = useApiKey()
 
   const fetchCalls = useCallback(async () => {
-    if (!apiKey) return
     try {
-      const res = await fetch("/api/calls", {
-        headers: { "x-api-key": apiKey },
-      })
+      const res = await fetch("/api/calls")
       if (!res.ok) throw new Error("Failed to fetch calls")
       const data = await res.json()
       setCalls(data.calls)
@@ -175,7 +170,7 @@ export default function ConversationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [apiKey])
+  }, [])
 
   useEffect(() => {
     fetchCalls()

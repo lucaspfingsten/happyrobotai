@@ -45,7 +45,6 @@ function toBool(val: string | boolean): boolean {
 
 export async function POST(request: Request) {
   const rawBody = await request.text()
-  console.log("[POST /api/webhooks/calls] Raw body:", rawBody.slice(0, 200))
 
   try {
     const body = JSON.parse(rawBody)
@@ -59,7 +58,6 @@ export async function POST(request: Request) {
       if (authError) return authError
 
       const summary = body as PostCallSummaryPayload
-      console.log("[POST /api/webhooks/calls] Post-call summary. Sentiment:", summary.call_sentiment)
 
       // Find the most recently ended call that doesn't have a summary yet
       const recentCall = await prisma.call.findFirst({
@@ -68,14 +66,11 @@ export async function POST(request: Request) {
       })
 
       if (!recentCall) {
-        console.log("[POST /api/webhooks/calls] No recent call without summary found")
         return NextResponse.json(
           { error: "No matching call found" },
           { status: 404 }
         )
       }
-
-      console.log("[POST /api/webhooks/calls] Attaching summary to call:", recentCall.callId)
 
       const stages = summary.stages_reached
       const negotiatedRate = summary.negotiated_rate != null
@@ -102,7 +97,6 @@ export async function POST(request: Request) {
 
     // CloudEvents session status webhook (no auth from HappyRobot)
     const cloudEvent = body as HappyRobotWebhookPayload
-    console.log("[POST /api/webhooks/calls] Event:", cloudEvent.type, "Session:", cloudEvent.data?.session_id, "Status:", cloudEvent.data?.status?.current)
 
     if (!cloudEvent.data?.session_id) {
       return NextResponse.json(

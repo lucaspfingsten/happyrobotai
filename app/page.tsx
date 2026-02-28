@@ -5,7 +5,6 @@ import { CallsMetrics } from "@/components/calls-metrics"
 import { CallsChart } from "@/components/calls-chart"
 import { CallInsights } from "@/components/call-insights"
 import { LoadsMetrics } from "@/components/loads-metrics"
-import { useApiKey } from "@/lib/use-api-key"
 
 interface MetricsData {
   calls: {
@@ -43,14 +42,10 @@ interface MetricsData {
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<MetricsData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const apiKey = useApiKey()
 
   const fetchMetrics = useCallback(async () => {
-    if (!apiKey) return
     try {
-      const res = await fetch("/api/metrics", {
-        headers: { "x-api-key": apiKey },
-      })
+      const res = await fetch("/api/metrics")
       if (!res.ok) throw new Error("Failed to fetch metrics")
       const data = await res.json()
       setMetrics(data)
@@ -58,7 +53,7 @@ export default function DashboardPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load metrics")
     }
-  }, [apiKey])
+  }, [])
 
   useEffect(() => {
     fetchMetrics()
