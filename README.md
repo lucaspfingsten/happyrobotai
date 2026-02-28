@@ -38,7 +38,7 @@ cd happyrobotai
 
 # 2. Create your environment file
 cp .env.example .env
-# Edit .env and set your API_KEY, DASHBOARD_PASSWORD, and FMCSA_WEB_KEY
+# Edit .env and set your API_KEY, WEBCALL_URL, DASHBOARD_PASSWORD, and FMCSA_WEB_KEY
 
 # 3. Start everything
 docker compose up --build
@@ -117,17 +117,22 @@ Railway provisions the database as a separate service. You need to link it:
 3. Select the PostgreSQL service and choose `DATABASE_URL`
 4. This injects the connection string automatically
 
-### 6. Deploy
+### 6. Set Health Check Path
+
+In your app service **Settings**, set the **Health Check Path** to `/api/health`. This prevents Railway from restarting the container due to failed health checks.
+
+### 7. Deploy
 
 Railway auto-detects the Dockerfile and builds. On first startup, the container will:
-1. Run `prisma db push` to create the database tables
-2. Run the seed script to populate 56 sample loads
-3. Start the Next.js server
+1. Run `prisma generate` to initialize the Prisma client
+2. Run `prisma db push` to create the database tables
+3. Run the seed script to populate 56 sample loads
+4. Start the Next.js server
 
 Once deployed:
 
 - Your dashboard is live at the Railway-provided URL (e.g., `https://happyrobotai-production.up.railway.app`)
-- Login with username `admin` and the `DASHBOARD_PASSWORD` you set
+- If `DASHBOARD_PASSWORD` is set, login with username `admin` and the password
 - Configure HappyRobot webhooks to point to `https://<your-railway-url>/api/webhooks/calls`
 
 ---
