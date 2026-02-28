@@ -23,6 +23,7 @@ services:
       DATABASE_URL: postgresql://happyrobot:happyrobot@db:5432/happyrobotai
       API_KEY: ${API_KEY:-hr-dev-api-key-change-me}
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-}
+      WEBCALL_URL: ${WEBCALL_URL:-}
       FMCSA_WEB_KEY: ${FMCSA_WEB_KEY:-}
     depends_on:
       db:

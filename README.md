@@ -105,6 +105,7 @@ In the Railway service settings, go to **Variables** and add:
 | `DATABASE_URL` | *(auto-set by Railway Postgres)* | Already configured |
 | `API_KEY` | `your-strong-secret-key` | Used to authenticate API requests and post-call webhooks |
 | `DASHBOARD_PASSWORD` | `your-dashboard-password` | Password for dashboard login (username: `admin`) |
+| `WEBCALL_URL` | `https://platform.happyrobot.ai/deployments/...` | HappyRobot webcall iframe URL |
 | `FMCSA_WEB_KEY` | `your-fmcsa-key` | Optional — for carrier verification |
 
 ### 5. Connect the Database to the App
@@ -138,6 +139,7 @@ Once deployed:
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `API_KEY` | Yes | Secret key for API authentication (webhooks, agent endpoints) |
 | `DASHBOARD_PASSWORD` | Recommended | Password for dashboard Basic Auth (username: `admin`). If not set, dashboard is open |
+| `WEBCALL_URL` | Yes | HappyRobot webcall iframe URL (differs per environment) |
 | `FMCSA_WEB_KEY` | No | FMCSA API key for carrier MC number verification |
 
 ---
