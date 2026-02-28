@@ -9,6 +9,7 @@ A real-time dashboard for monitoring HappyRobot AI voice agent calls, load searc
 - **Webcall** — Embedded HappyRobot platform interface
 - **Webhook Ingestion** — Receives CloudEvents session status updates and post-call analysis summaries
 - **REST APIs** — Load search and carrier verification endpoints for HappyRobot agents
+- **Basic Auth** — Dashboard is password-protected via HTTP Basic Authentication
 
 ## Tech Stack
 
@@ -37,17 +38,18 @@ cd happyrobotai
 
 # 2. Create your environment file
 cp .env.example .env
-# Edit .env and set your API_KEY and FMCSA_WEB_KEY
+# Edit .env and set your API_KEY, DASHBOARD_PASSWORD, and FMCSA_WEB_KEY
 
 # 3. Start everything
 docker compose up --build
 
 # On first start, the app will:
 #   - Create database tables
-#   - Seed with 56 sample loads and 4 sample calls
+#   - Seed with 56 sample loads
 #   - Start the server
 
 # The dashboard is now running at http://localhost:3000
+# Login with username "admin" and your DASHBOARD_PASSWORD
 ```
 
 To stop:
@@ -102,7 +104,8 @@ In the Railway service settings, go to **Variables** and add:
 |---|---|---|
 | `DATABASE_URL` | *(auto-set by Railway Postgres)* | Already configured |
 | `API_KEY` | `your-strong-secret-key` | Used to authenticate API requests and post-call webhooks |
-| `NEXT_PUBLIC_API_KEY` | `your-strong-secret-key` | Same as API_KEY (client-side) |
+| `DASHBOARD_PASSWORD` | `your-dashboard-password` | Password for dashboard login (username: `admin`) |
+| `WEBCALL_URL` | `https://platform.happyrobot.ai/deployments/...` | HappyRobot webcall iframe URL |
 | `FMCSA_WEB_KEY` | `your-fmcsa-key` | Optional — for carrier verification |
 
 ### 5. Connect the Database to the App
@@ -118,12 +121,13 @@ Railway provisions the database as a separate service. You need to link it:
 
 Railway auto-detects the Dockerfile and builds. On first startup, the container will:
 1. Run `prisma db push` to create the database tables
-2. Run the seed script to populate 56 sample loads and 4 sample calls
+2. Run the seed script to populate 56 sample loads
 3. Start the Next.js server
 
 Once deployed:
 
 - Your dashboard is live at the Railway-provided URL (e.g., `https://happyrobotai-production.up.railway.app`)
+- Login with username `admin` and the `DASHBOARD_PASSWORD` you set
 - Configure HappyRobot webhooks to point to `https://<your-railway-url>/api/webhooks/calls`
 
 ---
@@ -133,15 +137,32 @@ Once deployed:
 | Variable | Required | Description |
 |---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `API_KEY` | Yes | Secret key for API authentication |
-| `NEXT_PUBLIC_API_KEY` | Yes | Same key, exposed to client for dashboard API calls |
+| `API_KEY` | Yes | Secret key for API authentication (webhooks, agent endpoints) |
+| `DASHBOARD_PASSWORD` | Recommended | Password for dashboard Basic Auth (username: `admin`). If not set, dashboard is open |
+| `WEBCALL_URL` | Yes | HappyRobot webcall iframe URL (differs per environment) |
 | `FMCSA_WEB_KEY` | No | FMCSA API key for carrier MC number verification |
+
+---
+
+## Authentication
+
+### Dashboard (Browser)
+
+The dashboard uses HTTP Basic Authentication. When you visit the dashboard, the browser prompts for username and password:
+- **Username**: `admin`
+- **Password**: the value of `DASHBOARD_PASSWORD`
+
+If `DASHBOARD_PASSWORD` is not set, the dashboard is accessible without authentication.
+
+### API Endpoints
+
+API endpoints use API key authentication via the `x-api-key` header or `Authorization: ApiKey <key>` header. Dashboard API routes (`/api/metrics`, `/api/calls`) also accept the browser's Basic Auth credentials.
 
 ---
 
 ## API Endpoints
 
-### Dashboard APIs (require `x-api-key` header)
+### Dashboard APIs (require API key or Basic Auth)
 
 | Method | Path | Description |
 |---|---|---|
@@ -184,16 +205,16 @@ docker run -d --name happyrobot-db \
 docker run -d --name happyrobotai-app \
   -p 3000:3000 \
   -e DATABASE_URL=postgresql://happyrobot:happyrobot@host.docker.internal:5432/happyrobotai \
-  -e API_KEY=hr-dev-api-key-change-me \
-  -e NEXT_PUBLIC_API_KEY=hr-dev-api-key-change-me \
+  -e API_KEY=your-secret-api-key \
+  -e DASHBOARD_PASSWORD=your-dashboard-password \
   happyrobotai
 
 # The container will automatically:
 #   1. Create database tables (prisma db push)
-#   2. Seed with sample data (56 loads, 4 calls) if empty
+#   2. Seed with sample data (56 loads) if empty
 #   3. Start the server
 
-# Dashboard at http://localhost:3000
+# Dashboard at http://localhost:3000 (login: admin / your-dashboard-password)
 ```
 
 To stop and clean up:
@@ -258,11 +279,12 @@ npm run dev
 │   └── ui/                          # shadcn/ui primitives
 ├── lib/
 │   ├── db.ts                        # Prisma client singleton
-│   └── auth.ts                      # API key validation
+│   └── auth.ts                      # API key + Basic Auth validation
+├── middleware.ts                     # Dashboard Basic Auth middleware
 ├── prisma/
 │   ├── schema.prisma                # Database schema
 │   ├── seed.ts                      # Database seed script
-│   └── seed-data.json               # Sample loads and calls data
+│   └── seed-data.json               # Sample loads data
 ├── Dockerfile                       # Multi-stage production build
 ├── docker-compose.yml               # Local full-stack setup
 └── .env.example                     # Environment variable template

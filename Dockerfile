@@ -13,9 +13,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Dummy DATABASE_URL so prisma generate + next build can complete without a real DB
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-# NEXT_PUBLIC_ vars must be present at build time (baked into client JS)
-ARG NEXT_PUBLIC_API_KEY="hr-dev-api-key-change-me"
-ENV NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY
 RUN npx prisma generate
 RUN npm run build
 

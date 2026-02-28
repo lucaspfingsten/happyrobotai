@@ -35,27 +35,6 @@ async function main() {
   }
   console.log(`  Seeded ${seedData.loads.length} loads`)
 
-  // Seed calls
-  for (const call of seedData.calls) {
-    await prisma.call.create({
-      data: {
-        callId: call.callId,
-        status: call.status as "started" | "ended",
-        outcome: call.outcome,
-        durationSeconds: call.durationSeconds,
-        carrierName: call.carrierName,
-        startedAt: new Date(call.startedAt),
-        endedAt: call.endedAt ? new Date(call.endedAt) : null,
-        summary: call.summary,
-        sentiment: call.sentiment,
-        negotiatedRate: call.negotiatedRate,
-        stagesReached: call.stagesReached ?? undefined,
-        metadata: call.metadata ?? undefined,
-      },
-    })
-  }
-  console.log(`  Seeded ${seedData.calls.length} calls`)
-
   console.log("Seed complete.")
 }
 
