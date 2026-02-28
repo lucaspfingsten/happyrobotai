@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { SmilePlus, GitBranch, DollarSign } from "lucide-react"
+import { SmilePlus, GitBranch, Percent } from "lucide-react"
 
 interface CallInsightsProps {
   sentiments: { sentiment: string; count: number }[] | null
@@ -143,12 +143,12 @@ export function CallInsights({ sentiments, stages, negotiation }: CallInsightsPr
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <CardTitle className="text-base">Negotiated Rates</CardTitle>
+              <CardTitle className="text-base">Negotiation Discount</CardTitle>
               <CardDescription>
-                Agent negotiation performance ({negotiation?.count ?? 0} calls)
+                Rate reduction achieved ({negotiation?.count ?? 0} calls)
               </CardDescription>
             </div>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <Percent className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {!negotiation || negotiation.count === 0 ? (
@@ -158,16 +158,16 @@ export function CallInsights({ sentiments, stages, negotiation }: CallInsightsPr
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Average</span>
                   <span className="text-2xl font-bold">
-                    ${negotiation.avgRate?.toLocaleString() ?? "—"}
+                    {negotiation.avgRate ?? "—"}%
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Min</span>
-                  <span>${negotiation.minRate?.toLocaleString() ?? "—"}</span>
+                  <span>{negotiation.minRate ?? "—"}%</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Max</span>
-                  <span>${negotiation.maxRate?.toLocaleString() ?? "—"}</span>
+                  <span>{negotiation.maxRate ?? "—"}%</span>
                 </div>
               </div>
             )}

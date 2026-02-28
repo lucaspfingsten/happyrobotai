@@ -42,6 +42,11 @@ cp .env.example .env
 # 3. Start everything
 docker compose up --build
 
+# On first start, the app will:
+#   - Create database tables
+#   - Seed with 56 sample loads and 4 sample calls
+#   - Start the server
+
 # The dashboard is now running at http://localhost:3000
 ```
 
@@ -100,9 +105,23 @@ In the Railway service settings, go to **Variables** and add:
 | `NEXT_PUBLIC_API_KEY` | `your-strong-secret-key` | Same as API_KEY (client-side) |
 | `FMCSA_WEB_KEY` | `your-fmcsa-key` | Optional — for carrier verification |
 
-### 5. Deploy
+### 5. Connect the Database to the App
 
-Railway auto-detects the Dockerfile and builds. Once deployed:
+Railway provisions the database as a separate service. You need to link it:
+
+1. Click on the **app service** (your GitHub repo)
+2. Go to **Variables** → **Add Reference Variable**
+3. Select the PostgreSQL service and choose `DATABASE_URL`
+4. This injects the connection string automatically
+
+### 6. Deploy
+
+Railway auto-detects the Dockerfile and builds. On first startup, the container will:
+1. Run `prisma db push` to create the database tables
+2. Run the seed script to populate 56 sample loads and 4 sample calls
+3. Start the Next.js server
+
+Once deployed:
 
 - Your dashboard is live at the Railway-provided URL (e.g., `https://happyrobotai-production.up.railway.app`)
 - Configure HappyRobot webhooks to point to `https://<your-railway-url>/api/webhooks/calls`
@@ -145,6 +164,46 @@ Railway auto-detects the Dockerfile and builds. Once deployed:
 
 ---
 
+## Build and Run the Docker Image Manually
+
+If you want to build and run the Docker image yourself without Docker Compose:
+
+```bash
+# 1. Build the image
+docker build -t happyrobotai .
+
+# 2. Start a PostgreSQL container
+docker run -d --name happyrobot-db \
+  -e POSTGRES_DB=happyrobotai \
+  -e POSTGRES_USER=happyrobot \
+  -e POSTGRES_PASSWORD=happyrobot \
+  -p 5432:5432 \
+  postgres:16-alpine
+
+# 3. Run the app container (linked to the Postgres container)
+docker run -d --name happyrobotai-app \
+  -p 3000:3000 \
+  -e DATABASE_URL=postgresql://happyrobot:happyrobot@host.docker.internal:5432/happyrobotai \
+  -e API_KEY=hr-dev-api-key-change-me \
+  -e NEXT_PUBLIC_API_KEY=hr-dev-api-key-change-me \
+  happyrobotai
+
+# The container will automatically:
+#   1. Create database tables (prisma db push)
+#   2. Seed with sample data (56 loads, 4 calls) if empty
+#   3. Start the server
+
+# Dashboard at http://localhost:3000
+```
+
+To stop and clean up:
+```bash
+docker stop happyrobotai-app happyrobot-db
+docker rm happyrobotai-app happyrobot-db
+```
+
+---
+
 ## Local Development (without Docker)
 
 If you prefer running outside of Docker:
@@ -165,8 +224,9 @@ npm install
 cp .env.example .env
 # Edit .env — make sure DATABASE_URL points to localhost:5432
 
-# 4. Push database schema
+# 4. Push database schema and seed with sample data
 npx prisma db push
+npx prisma db seed
 
 # 5. Start dev server
 npm run dev
@@ -200,7 +260,9 @@ npm run dev
 │   ├── db.ts                        # Prisma client singleton
 │   └── auth.ts                      # API key validation
 ├── prisma/
-│   └── schema.prisma                # Database schema
+│   ├── schema.prisma                # Database schema
+│   ├── seed.ts                      # Database seed script
+│   └── seed-data.json               # Sample loads and calls data
 ├── Dockerfile                       # Multi-stage production build
 ├── docker-compose.yml               # Local full-stack setup
 └── .env.example                     # Environment variable template

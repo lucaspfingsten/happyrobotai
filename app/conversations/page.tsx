@@ -119,8 +119,8 @@ function ExpandedRow({ call }: { call: CallRecord }) {
                 <p className="text-sm text-muted-foreground">{call.summary}</p>
                 {call.negotiatedRate != null && (
                   <div className="mt-3 flex items-center gap-2">
-                    <span className="text-sm font-medium">Negotiated Rate:</span>
-                    <Badge variant="secondary">${call.negotiatedRate.toLocaleString()}</Badge>
+                    <span className="text-sm font-medium">Negotiated Discount:</span>
+                    <Badge variant="secondary">{call.negotiatedRate}%</Badge>
                   </div>
                 )}
               </CardContent>
