@@ -6,10 +6,9 @@ A real-time dashboard for monitoring HappyRobot AI voice agent calls, load searc
 
 - **Dashboard** — Call volume trends, sentiment analysis, call stage progression, and negotiation performance
 - **Conversations** — Live table of all call sessions with expandable detail rows (summary, stages reached, negotiated rates)
-- **Webcall** — Embedded HappyRobot platform interface
+- **Webcall** — Embedded HappyRobot platform interface for testing the AI agent
 - **Webhook Ingestion** — Receives CloudEvents session status updates and post-call analysis summaries
 - **REST APIs** — Load search and carrier verification endpoints for HappyRobot agents
-- **Basic Auth** — Dashboard is password-protected via HTTP Basic Authentication
 
 ## Tech Stack
 
@@ -38,7 +37,7 @@ cd happyrobotai
 
 # 2. Create your environment file
 cp .env.example .env
-# Edit .env and set your API_KEY, WEBCALL_URL, DASHBOARD_PASSWORD, and FMCSA_WEB_KEY
+# Edit .env and set your API_KEY, WEBCALL_URL, and FMCSA_WEB_KEY
 
 # 3. Start everything
 docker compose up --build
@@ -49,7 +48,6 @@ docker compose up --build
 #   - Start the server
 
 # The dashboard is now running at http://localhost:3000
-# Login with username "admin" and your DASHBOARD_PASSWORD
 ```
 
 To stop:
@@ -104,7 +102,6 @@ In the Railway service settings, go to **Variables** and add:
 |---|---|---|
 | `DATABASE_URL` | *(auto-set by Railway Postgres)* | Already configured |
 | `API_KEY` | `your-strong-secret-key` | Used to authenticate API requests and post-call webhooks |
-| `DASHBOARD_PASSWORD` | `your-dashboard-password` | Password for dashboard login (username: `admin`) |
 | `WEBCALL_URL` | `https://platform.happyrobot.ai/deployments/...` | HappyRobot webcall iframe URL |
 | `FMCSA_WEB_KEY` | `your-fmcsa-key` | Optional — for carrier verification |
 
@@ -123,16 +120,14 @@ In your app service **Settings**, set the **Health Check Path** to `/api/health`
 
 ### 7. Deploy
 
-Railway auto-detects the Dockerfile and builds. On first startup, the container will:
-1. Run `prisma generate` to initialize the Prisma client
-2. Run `prisma db push` to create the database tables
-3. Run the seed script to populate 56 sample loads
-4. Start the Next.js server
+Railway auto-detects the Dockerfile and builds. On first startup the container will:
+1. Run `prisma db push` to create/sync the database tables
+2. Run the seed script to populate 56 sample loads
+3. Start the Next.js server
 
 Once deployed:
 
 - Your dashboard is live at the Railway-provided URL (e.g., `https://happyrobotai-production.up.railway.app`)
-- If `DASHBOARD_PASSWORD` is set, login with username `admin` and the password
 - Configure HappyRobot webhooks to point to `https://<your-railway-url>/api/webhooks/calls`
 
 ---
@@ -143,7 +138,6 @@ Once deployed:
 |---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `API_KEY` | Yes | Secret key for API authentication (webhooks, agent endpoints) |
-| `DASHBOARD_PASSWORD` | Recommended | Password for dashboard Basic Auth (username: `admin`). If not set, dashboard is open |
 | `WEBCALL_URL` | Yes | HappyRobot webcall iframe URL (differs per environment) |
 | `FMCSA_WEB_KEY` | No | FMCSA API key for carrier MC number verification |
 
@@ -151,28 +145,34 @@ Once deployed:
 
 ## Authentication
 
-### Dashboard (Browser)
-
-The dashboard uses HTTP Basic Authentication. When you visit the dashboard, the browser prompts for username and password:
-- **Username**: `admin`
-- **Password**: the value of `DASHBOARD_PASSWORD`
-
-If `DASHBOARD_PASSWORD` is not set, the dashboard is accessible without authentication.
-
 ### API Endpoints
 
-API endpoints use API key authentication via the `x-api-key` header or `Authorization: ApiKey <key>` header. Dashboard API routes (`/api/metrics`, `/api/calls`) also accept the browser's Basic Auth credentials.
+API endpoints require an API key via the `x-api-key` header or `Authorization: ApiKey <key>` header.
+
+```bash
+# Example: fetch metrics
+curl http://localhost:3000/api/metrics -H "x-api-key: your-api-key"
+
+# Example: search loads
+curl "http://localhost:3000/api/v1/loads?origin=Chicago" -H "x-api-key: your-api-key"
+```
+
+### Dashboard (Browser)
+
+The dashboard pages (`/`, `/conversations`, `/webcall`) and their data endpoints (`/api/metrics`, `/api/calls`) are publicly accessible — no authentication required.
 
 ---
 
 ## API Endpoints
 
-### Dashboard APIs (require API key or Basic Auth)
+### Dashboard APIs (no auth required)
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/metrics` | Aggregated dashboard metrics |
 | `GET` | `/api/calls` | All call records |
+| `GET` | `/api/webcall-url` | Webcall iframe URL |
+| `GET` | `/api/health` | Health check |
 
 ### HappyRobot Agent APIs (require `x-api-key` header)
 
@@ -211,7 +211,6 @@ docker run -d --name happyrobotai-app \
   -p 3000:3000 \
   -e DATABASE_URL=postgresql://happyrobot:happyrobot@host.docker.internal:5432/happyrobotai \
   -e API_KEY=your-secret-api-key \
-  -e DASHBOARD_PASSWORD=your-dashboard-password \
   happyrobotai
 
 # The container will automatically:
@@ -219,7 +218,7 @@ docker run -d --name happyrobotai-app \
 #   2. Seed with sample data (56 loads) if empty
 #   3. Start the server
 
-# Dashboard at http://localhost:3000 (login: admin / your-dashboard-password)
+# Dashboard at http://localhost:3000
 ```
 
 To stop and clean up:
@@ -271,6 +270,8 @@ npm run dev
 │   └── api/
 │       ├── metrics/route.ts         # Aggregated metrics endpoint
 │       ├── calls/route.ts           # Call records endpoint
+│       ├── health/route.ts          # Health check endpoint
+│       ├── webcall-url/route.ts     # Webcall URL endpoint
 │       ├── webhooks/calls/route.ts  # Webhook ingestion
 │       └── v1/
 │           ├── loads/route.ts       # Load search for HR agents
@@ -284,8 +285,7 @@ npm run dev
 │   └── ui/                          # shadcn/ui primitives
 ├── lib/
 │   ├── db.ts                        # Prisma client singleton
-│   └── auth.ts                      # API key + Basic Auth validation
-├── middleware.ts                     # Dashboard Basic Auth middleware
+│   └── auth.ts                      # API key validation (agent endpoints)
 ├── prisma/
 │   ├── schema.prisma                # Database schema
 │   ├── seed.ts                      # Database seed script
