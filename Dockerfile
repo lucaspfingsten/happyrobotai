@@ -30,11 +30,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js generate && node node_modules/prisma/build/index.js db push --skip-generate && node node_modules/tsx/dist/cli.mjs prisma/seed.ts && node server.js"]
+CMD ["sh", "-c", "npx prisma generate && node node_modules/prisma/build/index.js db push --skip-generate && node node_modules/tsx/dist/cli.mjs prisma/seed.ts && node server.js"]
