@@ -81,8 +81,8 @@ export async function GET(request: Request) {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }))
 
-    // Sentiment and stages metrics
-    const [sentimentBreakdown, callsWithStages] = await Promise.all([
+    // Sentiment, stages, and negotiation metrics
+    const [sentimentBreakdown, callsWithStages, negotiationStats] = await Promise.all([
       prisma.call.groupBy({
         by: ["sentiment"],
         where: { sentiment: { not: null } },
@@ -91,6 +91,13 @@ export async function GET(request: Request) {
       prisma.call.findMany({
         where: { stagesReached: { not: null } },
         select: { stagesReached: true },
+      }),
+      prisma.call.aggregate({
+        where: { negotiatedRate: { not: null } },
+        _avg: { negotiatedRate: true },
+        _count: { negotiatedRate: true },
+        _min: { negotiatedRate: true },
+        _max: { negotiatedRate: true },
       }),
     ])
 
@@ -146,6 +153,12 @@ export async function GET(request: Request) {
         stages: {
           total: stagesTotal,
           ...stagesCounts,
+        },
+        negotiation: {
+          count: negotiationStats._count.negotiatedRate,
+          avgRate: negotiationStats._avg.negotiatedRate ? Math.round(negotiationStats._avg.negotiatedRate) : null,
+          minRate: negotiationStats._min.negotiatedRate,
+          maxRate: negotiationStats._max.negotiatedRate,
         },
       },
       loads: {

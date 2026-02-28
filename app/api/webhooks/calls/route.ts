@@ -29,6 +29,7 @@ interface HappyRobotWebhookPayload {
 interface PostCallSummaryPayload {
   call_summary: string
   call_sentiment: string
+  negotiated_rate: string | number | null
   stages_reached: {
     verified_mcnumber: string | boolean
     load_searched: string | boolean
@@ -77,11 +78,16 @@ export async function POST(request: Request) {
       console.log("[POST /api/webhooks/calls] Attaching summary to call:", recentCall.callId)
 
       const stages = summary.stages_reached
+      const negotiatedRate = summary.negotiated_rate != null
+        ? parseFloat(String(summary.negotiated_rate))
+        : null
+
       await prisma.call.update({
         where: { id: recentCall.id },
         data: {
           summary: summary.call_summary,
           sentiment: summary.call_sentiment,
+          negotiatedRate: negotiatedRate && !isNaN(negotiatedRate) ? negotiatedRate : null,
           stagesReached: {
             verified_mcnumber: toBool(stages.verified_mcnumber),
             load_searched: toBool(stages.load_searched),

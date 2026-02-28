@@ -9,6 +9,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U happyrobot -d happyrobotai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   app:
     build: .
@@ -16,8 +21,12 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgresql://happyrobot:happyrobot@db:5432/happyrobotai
+      API_KEY: ${API_KEY:-hr-dev-api-key-change-me}
+      NEXT_PUBLIC_API_KEY: ${NEXT_PUBLIC_API_KEY:-hr-dev-api-key-change-me}
+      FMCSA_WEB_KEY: ${FMCSA_WEB_KEY:-}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
