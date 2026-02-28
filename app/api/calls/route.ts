@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { validateApiKey } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
-export async function GET(request: Request) {
-  const authError = validateApiKey(request)
-  if (authError) return authError
+export async function GET() {
 
   try {
     const calls = await prisma.call.findMany({

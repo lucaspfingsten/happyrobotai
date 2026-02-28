@@ -23,14 +23,6 @@ export function validateApiKey(request: Request): NextResponse | null {
     if (match && apiKey && safeEqual(match[1], apiKey)) return null
   }
 
-  // Check Basic Auth (dashboard browser session — already validated by middleware)
-  if (auth?.startsWith("Basic ")) {
-    const decoded = atob(auth.slice(6))
-    const [user, pass] = decoded.split(":")
-    const expectedPassword = process.env.DASHBOARD_PASSWORD
-    if (expectedPassword && user === "admin" && safeEqual(pass, expectedPassword)) return null
-  }
-
   return NextResponse.json(
     { error: "Unauthorized" },
     { status: 401 }
