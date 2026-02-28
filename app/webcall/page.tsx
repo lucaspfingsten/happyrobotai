@@ -2,14 +2,34 @@
 
 import { useEffect, useState } from "react"
 
+const ALLOWED_HOSTS = ["platform.happyrobot.ai"]
+
+function isAllowedUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return ALLOWED_HOSTS.includes(parsed.hostname)
+  } catch {
+    return false
+  }
+}
+
 export default function WebcallPage() {
   const [webcallUrl, setWebcallUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/webcall-url")
       .then((res) => res.json())
-      .then((data) => setWebcallUrl(data.url || null))
-      .catch(() => setWebcallUrl(null))
+      .then((data) => {
+        if (data.url && isAllowedUrl(data.url)) {
+          setWebcallUrl(data.url)
+        } else if (data.url) {
+          setError("Webcall URL points to an untrusted domain.")
+        } else {
+          setError("No webcall URL configured. Set WEBCALL_URL in your environment.")
+        }
+      })
+      .catch(() => setError("Failed to load webcall configuration."))
   }, [])
 
   return (
@@ -29,7 +49,7 @@ export default function WebcallPage() {
           />
         ) : (
           <div className="flex h-full items-center justify-center text-muted-foreground">
-            {webcallUrl === null ? "Loading..." : "No webcall URL configured. Set WEBCALL_URL in your environment."}
+            {error ?? "Loading..."}
           </div>
         )}
       </div>

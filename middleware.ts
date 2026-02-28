@@ -30,12 +30,16 @@ export function middleware(request: NextRequest) {
 
   // Dashboard pages require Basic Auth
   if (!isValidBasicAuth(request)) {
-    return new NextResponse("Authentication required", {
-      status: 401,
-      headers: {
-        "WWW-Authenticate": 'Basic realm="HappyRobot Dashboard"',
-      },
-    })
+    return new NextResponse(
+      '<html><body><h1>Authentication required</h1><p>Please log in to access the dashboard.</p></body></html>',
+      {
+        status: 401,
+        headers: {
+          "WWW-Authenticate": 'Basic realm="HappyRobot Dashboard"',
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      }
+    )
   }
 
   return NextResponse.next()

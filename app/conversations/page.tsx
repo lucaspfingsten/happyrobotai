@@ -158,14 +158,28 @@ export default function ConversationsPage() {
   const [error, setError] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  const fetchCalls = useCallback(async () => {
+  const fetchCalls = useCallback(async (retries = 2) => {
     try {
       const res = await fetch("/api/calls")
-      if (!res.ok) throw new Error("Failed to fetch calls")
+      if (res.status === 401) {
+        window.location.reload()
+        return
+      }
+      if (!res.ok) {
+        if (retries > 0) {
+          await new Promise((r) => setTimeout(r, 1000))
+          return fetchCalls(retries - 1)
+        }
+        throw new Error("Failed to fetch calls")
+      }
       const data = await res.json()
       setCalls(data.calls)
       setError(null)
     } catch (err) {
+      if (retries > 0) {
+        await new Promise((r) => setTimeout(r, 1000))
+        return fetchCalls(retries - 1)
+      }
       setError(err instanceof Error ? err.message : "Failed to load calls")
     } finally {
       setLoading(false)
