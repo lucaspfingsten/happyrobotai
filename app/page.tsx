@@ -43,14 +43,28 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<MetricsData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchMetrics = useCallback(async () => {
+  const fetchMetrics = useCallback(async (retries = 2) => {
     try {
       const res = await fetch("/api/metrics")
-      if (!res.ok) throw new Error("Failed to fetch metrics")
+      if (res.status === 401) {
+        window.location.reload()
+        return
+      }
+      if (!res.ok) {
+        if (retries > 0) {
+          await new Promise((r) => setTimeout(r, 1000))
+          return fetchMetrics(retries - 1)
+        }
+        throw new Error("Failed to fetch metrics")
+      }
       const data = await res.json()
       setMetrics(data)
       setError(null)
     } catch (err) {
+      if (retries > 0) {
+        await new Promise((r) => setTimeout(r, 1000))
+        return fetchMetrics(retries - 1)
+      }
       setError(err instanceof Error ? err.message : "Failed to load metrics")
     }
   }, [])

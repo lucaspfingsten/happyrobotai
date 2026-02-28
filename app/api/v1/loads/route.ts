@@ -12,11 +12,19 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
 
-    const origin = searchParams.get("origin")
-    const destination = searchParams.get("destination")
-    const pickupDatetime = searchParams.get("pickup_datetime")
-    const deliveryDatetime = searchParams.get("delivery_datetime")
-    const equipmentType = searchParams.get("equipment_type")
+    const MAX_PARAM_LENGTH = 200
+
+    function sanitize(val: string | null): string | null {
+      if (!val) return null
+      if (val.length > MAX_PARAM_LENGTH) return null
+      return val.trim()
+    }
+
+    const origin = sanitize(searchParams.get("origin"))
+    const destination = sanitize(searchParams.get("destination"))
+    const pickupDatetime = sanitize(searchParams.get("pickup_datetime"))
+    const deliveryDatetime = sanitize(searchParams.get("delivery_datetime"))
+    const equipmentType = sanitize(searchParams.get("equipment_type"))
 
     const where: Prisma.LoadWhereInput = {}
 
@@ -31,12 +39,24 @@ export async function GET(request: Request) {
     }
     if (pickupDatetime) {
       const date = new Date(pickupDatetime)
+      if (isNaN(date.getTime())) {
+        return NextResponse.json(
+          { statusCode: 400, body: { error: "Invalid pickup_datetime format" } },
+          { status: 400 }
+        )
+      }
       const nextDay = new Date(date)
       nextDay.setDate(nextDay.getDate() + 1)
       where.pickupDatetime = { gte: date, lt: nextDay }
     }
     if (deliveryDatetime) {
       const date = new Date(deliveryDatetime)
+      if (isNaN(date.getTime())) {
+        return NextResponse.json(
+          { statusCode: 400, body: { error: "Invalid delivery_datetime format" } },
+          { status: 400 }
+        )
+      }
       const nextDay = new Date(date)
       nextDay.setDate(nextDay.getDate() + 1)
       where.deliveryDatetime = { gte: date, lt: nextDay }
