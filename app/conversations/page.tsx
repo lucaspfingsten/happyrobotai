@@ -161,10 +161,6 @@ export default function ConversationsPage() {
   const fetchCalls = useCallback(async (retries = 2) => {
     try {
       const res = await fetch("/api/calls")
-      if (res.status === 401) {
-        window.location.reload()
-        return
-      }
       if (!res.ok) {
         if (retries > 0) {
           await new Promise((r) => setTimeout(r, 1000))

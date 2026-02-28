@@ -92,10 +92,9 @@ The application is packaged as a single Docker container with a multi-stage buil
 ## Security
 
 - **API Authentication** — All API endpoints require an API key via `x-api-key` header or `Authorization: ApiKey <key>` header
-- **Dashboard Authentication** — Optional HTTP Basic Auth (username: `admin`, configurable password)
 - **Security Headers** — X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, Referrer-Policy, Permissions-Policy
 - **Input Validation** — All user inputs are sanitized and length-limited
-- **Timing-Safe Comparisons** — API key and password validation use constant-time comparison to prevent timing attacks
+- **Timing-Safe Comparisons** — API key validation uses constant-time comparison to prevent timing attacks
 - **Webhook Security** — Post-call summary webhooks require API key authentication; session status webhooks are validated by structure
 
 ---
@@ -107,7 +106,6 @@ The application is packaged as a single Docker container with a multi-stage buil
 | -------------------- | -------- | ------------------------------------------------------------------ |
 | `DATABASE_URL`       | Yes      | PostgreSQL connection string                                       |
 | `API_KEY`            | Yes      | Shared secret for API authentication (used by HappyRobot platform) |
-| `DASHBOARD_PASSWORD` | No       | Password for dashboard Basic Auth (omit to disable auth)           |
 | `WEBCALL_URL`        | No       | URL for the embedded webcall test interface                        |
 | `FMCSA_WEB_KEY`      | Yes      | API key for FMCSA carrier verification service                     |
 
