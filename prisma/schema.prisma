@@ -43,6 +43,7 @@ model Call {
   endedAt         DateTime?  @map("ended_at")
   summary         String?    @map("summary")
   sentiment       String?    @map("sentiment")
+  negotiatedRate  Float?     @map("negotiated_rate")
   stagesReached   Json?      @map("stages_reached")
   metadata        Json?
   createdAt       DateTime   @default(now()) @map("created_at")

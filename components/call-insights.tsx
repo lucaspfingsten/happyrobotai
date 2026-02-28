@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { SmilePlus, GitBranch } from "lucide-react"
+import { SmilePlus, GitBranch, Percent } from "lucide-react"
 
 interface CallInsightsProps {
   sentiments: { sentiment: string; count: number }[] | null
@@ -18,6 +18,12 @@ interface CallInsightsProps {
     load_searched: number
     offer_negotiated: number
     call_transferred: number
+  } | null
+  negotiation: {
+    count: number
+    avgRate: number | null
+    minRate: number | null
+    maxRate: number | null
   } | null
 }
 
@@ -54,7 +60,7 @@ function ProgressBar({ value, max, label }: { value: number; max: number; label:
   )
 }
 
-export function CallInsights({ sentiments, stages }: CallInsightsProps) {
+export function CallInsights({ sentiments, stages, negotiation }: CallInsightsProps) {
   if (!sentiments && !stages) {
     return (
       <div className="grid gap-4 md:grid-cols-2">
@@ -75,7 +81,7 @@ export function CallInsights({ sentiments, stages }: CallInsightsProps) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Call Insights</h2>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
@@ -129,6 +135,40 @@ export function CallInsights({ sentiments, stages }: CallInsightsProps) {
                     max={stages.total}
                   />
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div>
+              <CardTitle className="text-base">Negotiation Discount</CardTitle>
+              <CardDescription>
+                Rate reduction achieved ({negotiation?.count ?? 0} calls)
+              </CardDescription>
+            </div>
+            <Percent className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {!negotiation || negotiation.count === 0 ? (
+              <p className="text-sm text-muted-foreground">No negotiation data yet</p>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Average</span>
+                  <span className="text-2xl font-bold">
+                    {negotiation.avgRate ?? "—"}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Min</span>
+                  <span>{negotiation.minRate ?? "—"}%</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Max</span>
+                  <span>{negotiation.maxRate ?? "—"}%</span>
+                </div>
               </div>
             )}
           </CardContent>

@@ -36,6 +36,7 @@ interface CallRecord {
   endedAt: string | null
   summary: string | null
   sentiment: string | null
+  negotiatedRate: number | null
   stagesReached: StagesReached | null
   metadata: {
     org?: { name: string }
@@ -116,6 +117,12 @@ function ExpandedRow({ call }: { call: CallRecord }) {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">{call.summary}</p>
+                {call.negotiatedRate != null && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-sm font-medium">Negotiated Discount:</span>
+                    <Badge variant="secondary">{call.negotiatedRate}%</Badge>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -151,16 +158,28 @@ export default function ConversationsPage() {
   const [error, setError] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  const fetchCalls = useCallback(async () => {
+  const fetchCalls = useCallback(async (retries = 2) => {
     try {
-      const res = await fetch("/api/calls", {
-        headers: { "x-api-key": process.env.NEXT_PUBLIC_API_KEY ?? "" },
-      })
-      if (!res.ok) throw new Error("Failed to fetch calls")
+      const res = await fetch("/api/calls")
+      if (res.status === 401) {
+        window.location.reload()
+        return
+      }
+      if (!res.ok) {
+        if (retries > 0) {
+          await new Promise((r) => setTimeout(r, 1000))
+          return fetchCalls(retries - 1)
+        }
+        throw new Error("Failed to fetch calls")
+      }
       const data = await res.json()
       setCalls(data.calls)
       setError(null)
     } catch (err) {
+      if (retries > 0) {
+        await new Promise((r) => setTimeout(r, 1000))
+        return fetchCalls(retries - 1)
+      }
       setError(err instanceof Error ? err.message : "Failed to load calls")
     } finally {
       setLoading(false)

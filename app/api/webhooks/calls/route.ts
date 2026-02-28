@@ -29,6 +29,7 @@ interface HappyRobotWebhookPayload {
 interface PostCallSummaryPayload {
   call_summary: string
   call_sentiment: string
+  negotiated_rate: string | number | null
   stages_reached: {
     verified_mcnumber: string | boolean
     load_searched: string | boolean
@@ -44,7 +45,6 @@ function toBool(val: string | boolean): boolean {
 
 export async function POST(request: Request) {
   const rawBody = await request.text()
-  console.log("[POST /api/webhooks/calls] Raw body:", rawBody.slice(0, 200))
 
   try {
     const body = JSON.parse(rawBody)
@@ -58,7 +58,6 @@ export async function POST(request: Request) {
       if (authError) return authError
 
       const summary = body as PostCallSummaryPayload
-      console.log("[POST /api/webhooks/calls] Post-call summary. Sentiment:", summary.call_sentiment)
 
       // Find the most recently ended call that doesn't have a summary yet
       const recentCall = await prisma.call.findFirst({
@@ -67,21 +66,23 @@ export async function POST(request: Request) {
       })
 
       if (!recentCall) {
-        console.log("[POST /api/webhooks/calls] No recent call without summary found")
         return NextResponse.json(
           { error: "No matching call found" },
           { status: 404 }
         )
       }
 
-      console.log("[POST /api/webhooks/calls] Attaching summary to call:", recentCall.callId)
-
       const stages = summary.stages_reached
+      const negotiatedRate = summary.negotiated_rate != null
+        ? parseFloat(String(summary.negotiated_rate))
+        : null
+
       await prisma.call.update({
         where: { id: recentCall.id },
         data: {
           summary: summary.call_summary,
           sentiment: summary.call_sentiment,
+          negotiatedRate: negotiatedRate && !isNaN(negotiatedRate) ? negotiatedRate : null,
           stagesReached: {
             verified_mcnumber: toBool(stages.verified_mcnumber),
             load_searched: toBool(stages.load_searched),
@@ -96,7 +97,6 @@ export async function POST(request: Request) {
 
     // CloudEvents session status webhook (no auth from HappyRobot)
     const cloudEvent = body as HappyRobotWebhookPayload
-    console.log("[POST /api/webhooks/calls] Event:", cloudEvent.type, "Session:", cloudEvent.data?.session_id, "Status:", cloudEvent.data?.status?.current)
 
     if (!cloudEvent.data?.session_id) {
       return NextResponse.json(

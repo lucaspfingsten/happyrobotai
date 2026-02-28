@@ -13,9 +13,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const mcNumber = searchParams.get("mc_number")
 
-    if (!mcNumber) {
+    if (!mcNumber || mcNumber.length > 20) {
       return NextResponse.json(
-        { statusCode: 400, body: { error: "Missing required parameter: mc_number" } },
+        { statusCode: 400, body: { error: "Missing or invalid parameter: mc_number" } },
         { status: 400 }
       )
     }

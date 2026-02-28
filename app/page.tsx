@@ -22,6 +22,12 @@ interface MetricsData {
       offer_negotiated: number
       call_transferred: number
     }
+    negotiation: {
+      count: number
+      avgRate: number | null
+      minRate: number | null
+      maxRate: number | null
+    }
   }
   loads: {
     total: number
@@ -37,16 +43,28 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<MetricsData | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchMetrics = useCallback(async () => {
+  const fetchMetrics = useCallback(async (retries = 2) => {
     try {
-      const res = await fetch("/api/metrics", {
-        headers: { "x-api-key": process.env.NEXT_PUBLIC_API_KEY ?? "" },
-      })
-      if (!res.ok) throw new Error("Failed to fetch metrics")
+      const res = await fetch("/api/metrics")
+      if (res.status === 401) {
+        window.location.reload()
+        return
+      }
+      if (!res.ok) {
+        if (retries > 0) {
+          await new Promise((r) => setTimeout(r, 1000))
+          return fetchMetrics(retries - 1)
+        }
+        throw new Error("Failed to fetch metrics")
+      }
       const data = await res.json()
       setMetrics(data)
       setError(null)
     } catch (err) {
+      if (retries > 0) {
+        await new Promise((r) => setTimeout(r, 1000))
+        return fetchMetrics(retries - 1)
+      }
       setError(err instanceof Error ? err.message : "Failed to load metrics")
     }
   }, [])
@@ -78,6 +96,7 @@ export default function DashboardPage() {
         <CallInsights
           sentiments={metrics?.calls?.sentiments ?? null}
           stages={metrics?.calls?.stages ?? null}
+          negotiation={metrics?.calls?.negotiation ?? null}
         />
         <LoadsMetrics data={metrics?.loads ?? null} />
       </div>
