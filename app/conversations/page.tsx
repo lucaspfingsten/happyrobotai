@@ -36,6 +36,7 @@ interface CallRecord {
   endedAt: string | null
   summary: string | null
   sentiment: string | null
+  negotiatedRate: number | null
   stagesReached: StagesReached | null
   metadata: {
     org?: { name: string }
@@ -116,6 +117,12 @@ function ExpandedRow({ call }: { call: CallRecord }) {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">{call.summary}</p>
+                {call.negotiatedRate != null && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="text-sm font-medium">Negotiated Rate:</span>
+                    <Badge variant="secondary">${call.negotiatedRate.toLocaleString()}</Badge>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
