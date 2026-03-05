@@ -31,7 +31,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+COPY --chown=nextjs:nodejs start.sh ./start.sh
 
 USER nextjs
 
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js db push --skip-generate && node node_modules/tsx/dist/cli.mjs prisma/seed.ts && node server.js"]
+CMD ["./start.sh"]
